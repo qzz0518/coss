@@ -35,11 +35,14 @@ async function main() {
     const wallet = await DirectSecp256k1Wallet.fromKey(Buffer.from(privateKey, "hex"), "cosmos");
     const [account] = await wallet.getAccounts();
     const walletAddress = account.address;
+
+    const client = await SigningStargateClient.connectWithSigner(process.env.NODE_URL, wallet);
+    const balance = await client.getBalance(walletAddress, "uatom");
+    console.log(`地址: ${walletAddress} 余额: ${parseFloat(balance.amount) / 1000000}`);
     walletData.push(    {
         "address": walletAddress,
         "privateKey": privateKey
     });
-
     Promise.all(walletData.map(wallet => performTransaction(wallet, 10)))
         .then(() => {
             console.log("所有操作完成");
