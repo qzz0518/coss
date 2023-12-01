@@ -19,7 +19,11 @@ async function main() {
     const amount = coins(1000000, "uatom");
     for (const recipient of recipients) {
         try {
-            const result = await client.sendTokens(account.address, recipient, amount, "auto");
+            const fee = {
+                amount: coins(750, "uatom"),
+                gas: "150000",
+            };
+            const result = await client.sendTokens(account.address, recipient, amount, fee);
             console.log(`${recipient}: 转账 ${amount.toString()} 成功: ${'https://www.mintscan.io/cosmos/tx/' + result.transactionHash}`);
         } catch (error) {
             console.error(`转账给 ${recipient} 失败: `, error);
