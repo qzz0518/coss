@@ -1,39 +1,52 @@
 require('dotenv').config();
-const { SigningStargateClient, GasPrice } = require("@cosmjs/stargate");
-const { MsgSend } = require("cosmjs-types/cosmos/bank/v1beta1/tx");
-const { base64FromBytes } = require("cosmjs-types/helpers");
-const { DirectSecp256k1Wallet } = require("@cosmjs/proto-signing");
+const { SigningStargateClient, GasPrice, coins } = require("@cosmjs/stargate");
+const { DirectSecp256k1Wallet } = require('@cosmjs/proto-signing');
+const { readFileSync } = require("fs");
+const {base64FromBytes} = require("cosmjs-types/helpers");
 
-async function main(transactionCount) {
+async function performTransaction(walletInfo, numberOfTimes) {
     const rpcEndpoint = process.env.NODE_URL;
+    const gasPrice = GasPrice.fromString("0.025uatom");
+    const wallet = await DirectSecp256k1Wallet.fromKey(Buffer.from(walletInfo.privateKey, "hex"), "cosmos");
+    const client = await SigningStargateClient.connectWithSigner(rpcEndpoint, wallet, { gasPrice: gasPrice });
+
+    for (let i = 0; i < numberOfTimes; i++) {
+        try {
+            const [account] = await wallet.getAccounts();
+            const amount = coins(1, "uatom");
+            const memo = 'data:,{"op":"mint","amt":10000,"tick":"coss","p":"crc-20"}';
+
+            const result = await client.sendTokens(account.address, account.address, amount, "auto", base64FromBytes(Buffer.from(memo, 'utf8')));
+            console.log(`${account.address}, 第 ${i + 1} 次操作成功: ${'https://www.mintscan.io/cosmos/tx/' + result.transactionHash}`);
+        } catch (error) {
+            console.error(`第 ${i + 1} 次操作失败: `, error);
+        }
+    }
+}
+
+async function main() {
+    let walletData = [];
+    try {
+        walletData = JSON.parse(readFileSync('cosmos_wallets.json', 'utf-8'));
+    } catch (e) {
+        console.log('未找到 cosmos_wallets.json,使用配置的主钱包');
+    }
     const privateKey = process.env.PRIVATE_KEY;
     const wallet = await DirectSecp256k1Wallet.fromKey(Buffer.from(privateKey, "hex"), "cosmos");
     const [account] = await wallet.getAccounts();
     const walletAddress = account.address;
+    walletData.push(    {
+        "address": walletAddress,
+        "privateKey": privateKey
+    });
 
-    const gasPrice = GasPrice.fromString("0.025uatom");
-    const client = await SigningStargateClient.connectWithSigner(rpcEndpoint, wallet, { gasPrice: gasPrice });
-    // 打印当前钱包的地址和余额
-    const balance = await client.getBalance(walletAddress, "uatom");
-    console.log(`地址: ${walletAddress} 余额: ${parseFloat(balance.amount) / 1000000}`);
-    let memo = 'data:,{"op":"mint","amt":10000,"tick":"coss","p":"crc-20"}';
-    memo = base64FromBytes(Buffer.from(memo, 'utf8'));
-
-    for (let i = 0; i < transactionCount; i++) {
-        const msg = {
-            typeUrl: "/cosmos.bank.v1beta1.MsgSend",
-            value: MsgSend.fromPartial({
-                fromAddress: walletAddress,
-                toAddress: walletAddress,
-                amount: [{ denom: "uatom", amount: "1" }],
-            }),
-        };
-
-        // 发送交易
-        const result = await client.signAndBroadcast(walletAddress, [msg], 'auto', memo);
-        console.log(`${i+1}: Transaction Hash: ${'https://www.mintscan.io/cosmos/tx/' + result.transactionHash}`);
-    }
+    Promise.all(walletData.map(wallet => performTransaction(wallet, 10)))
+        .then(() => {
+            console.log("所有操作完成");
+        })
+        .catch(error => {
+            console.error("操作中有错误发生: ", error);
+        });
 }
 
-const transactionCount = parseInt(process.argv[2]) || 100;
-main(transactionCount).catch(console.error);
+main();
