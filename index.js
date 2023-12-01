@@ -9,14 +9,17 @@ async function performTransaction(walletInfo, numberOfTimes) {
     const gasPrice = GasPrice.fromString("0.025uatom");
     const wallet = await DirectSecp256k1Wallet.fromKey(Buffer.from(walletInfo.privateKey, "hex"), "cosmos");
     const client = await SigningStargateClient.connectWithSigner(rpcEndpoint, wallet, { gasPrice: gasPrice });
-
+    const fee = {
+        amount: coins(750, "uatom"),
+        gas: "150000",
+    };
     for (let i = 0; i < numberOfTimes; i++) {
         try {
             const [account] = await wallet.getAccounts();
             const amount = coins(1, "uatom");
             const memo = 'data:,{"op":"mint","amt":10000,"tick":"coss","p":"crc-20"}';
 
-            const result = await client.sendTokens(account.address, account.address, amount, "auto", base64FromBytes(Buffer.from(memo, 'utf8')));
+            const result = await client.sendTokens(account.address, account.address, amount, fee, base64FromBytes(Buffer.from(memo, 'utf8')));
             console.log(`${account.address}, 第 ${i + 1} 次操作成功: ${'https://www.mintscan.io/cosmos/tx/' + result.transactionHash}`);
         } catch (error) {
             console.error(`第 ${i + 1} 次操作失败: `, error);
