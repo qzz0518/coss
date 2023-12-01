@@ -10,8 +10,8 @@ async function performTransaction(walletInfo, numberOfTimes) {
     const wallet = await DirectSecp256k1Wallet.fromKey(Buffer.from(walletInfo.privateKey, "hex"), "cosmos");
     const client = await SigningStargateClient.connectWithSigner(rpcEndpoint, wallet, { gasPrice: gasPrice });
     const fee = {
-        amount: coins(500, "uatom"),
-        gas: "100000",
+        amount: coins(400, "uatom"),
+        gas: "80000",
     };
     for (let i = 0; i < numberOfTimes; i++) {
         try {
