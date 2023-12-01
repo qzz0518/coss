@@ -1,0 +1,18 @@
+{
+  "name": "coss",
+  "version": "1.0.0",
+  "main": "index.js",
+  "license": "MIT",
+  "dependencies": {
+    "@cosmjs/amino": "^0.32.0",
+    "@cosmjs/crypto": "^0.32.0",
+    "@cosmjs/launchpad": "^0.27.1",
+    "@cosmjs/proto-signing": "^0.32.0",
+    "@cosmjs/stargate": "^0.32.0",
+    "bip39": "^3.1.0",
+    "cosmjs-types": "^0.9.0",
+    "cosmos-lib": "^1.1.0",
+    "dotenv": "^16.3.1",
+    "fs": "^0.0.1-security"
+  }
+}
