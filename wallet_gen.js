@@ -5,7 +5,10 @@ const {DirectSecp256k1Wallet} = require("@cosmjs/proto-signing");
 
 async function generateCosmosWallets(numberOfWallets) {
     let walletData = [];
-
+    if (fs.existsSync('cosmos_wallets.json')) {
+        const existingData = JSON.parse(fs.readFileSync('cosmos_wallets.json', 'utf8'));
+        walletData = [...existingData];
+    }
     for (let i = 0; i < numberOfWallets; i++) {
         const mnemonic = bip39.generateMnemonic();
         const keys = crypto.getKeysFromMnemonic(mnemonic);
@@ -22,6 +25,6 @@ async function generateCosmosWallets(numberOfWallets) {
     fs.writeFileSync('cosmos_wallets.json', JSON.stringify(walletData, null, 4));
 }
 
-generateCosmosWallets(10).then(() => {
+generateCosmosWallets(30).then(() => {
     console.log("Wallets generated and saved to cosmos_wallets.json");
 });

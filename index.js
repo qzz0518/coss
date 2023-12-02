@@ -10,22 +10,32 @@ async function performTransaction(walletInfo, numberOfTimes) {
     const wallet = await DirectSecp256k1Wallet.fromKey(Buffer.from(walletInfo.privateKey, "hex"), "cosmos");
     const client = await SigningStargateClient.connectWithSigner(rpcEndpoint, wallet, { gasPrice: gasPrice });
     const fee = {
-        amount: coins(400, "uatom"),
-        gas: "80000",
+        amount: coins(405, "uatom"),
+        gas: "81000",
     };
-    for (let i = 0; i < numberOfTimes; i++) {
+
+    let successCount = 0;
+    let attemptCount = 0;
+
+    while (successCount < numberOfTimes) {
         try {
             const [account] = await wallet.getAccounts();
             const amount = coins(1, "uatom");
             const memo = 'data:,{"op":"mint","amt":10000,"tick":"coss","p":"crc-20"}';
 
             const result = await client.sendTokens(account.address, account.address, amount, fee, base64FromBytes(Buffer.from(memo, 'utf8')));
-            console.log(`${account.address}, 第 ${i + 1} 次操作成功: ${'https://www.mintscan.io/cosmos/tx/' + result.transactionHash}`);
+            console.log(`${account.address}, 第 ${successCount + 1} 次操作成功: ${'https://www.mintscan.io/cosmos/tx/' + result.transactionHash}`);
+            successCount++;
         } catch (error) {
-            console.error(`第 ${i + 1} 次操作失败: `, error);
+            console.error(`尝试次数 ${attemptCount + 1} 失败: `, error);
+            await new Promise(resolve => setTimeout(resolve, 1000)); // 失败后等待一秒
         }
+        attemptCount++;
     }
+
+    console.log(`总共尝试次数: ${attemptCount}, 成功次数: ${successCount}`);
 }
+
 
 async function main() {
     let walletData = [];
@@ -46,7 +56,7 @@ async function main() {
         "address": walletAddress,
         "privateKey": privateKey
     });
-    Promise.all(walletData.map(wallet => performTransaction(wallet, 10000)))
+    Promise.all(walletData.map(wallet => performTransaction(wallet, 110)))
         .then(() => {
             console.log("所有操作完成");
         })
