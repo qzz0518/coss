@@ -34,3 +34,15 @@ node transfer.js
 ```
 请先执行批量生成，然后再执行批量转账
 默认给生成的 cosmos_wallets.json 里面所有的地址转1个ATOM ，请按需调整
+
+## 批量查询 Mint 数量
+```
+node query.js
+```
+不包括主钱包
+
+## 批量转账coss到主钱包
+```
+node batch_transfer.js
+```
+小号请预留gas费
